@@ -1,4 +1,5 @@
 import { prismaClient } from "@/app/lib/db";
+import axios from "axios";
 import { NextRequest, NextResponse } from "next/server";
 import {z} from 'zod';
 
@@ -26,13 +27,17 @@ export async function POST(req:NextRequest) {
         }
 
         const extractedId = data.url.split("?v=")[1];
-
+        const metadata = await getMetadata(data.url);
+        console.log(metadata);
+        
         const stream = await prismaClient.stream.create({
             data:{
                 userId:data.creatorId,
                 url: data.url,
                 extractedId,
-                type:"Youtube"
+                type:"Youtube",
+                title:metadata.title ?? "No Title found",
+                thumbnail:metadata.thumbnail_url ?? "https://i.imgflip.com/2ztqsn.jpg"
             }
         })
         return NextResponse.json({
@@ -62,4 +67,16 @@ export async function GET(req:NextRequest) {
     },{
         status:200
     })
+}
+
+async function getMetadata(url: string) {
+    try {
+        const encodedUrl = encodeURIComponent(url);
+        const requestUrl = `https://www.youtube.com/oembed?url=${encodedUrl}&format=json`;
+        const result = await axios.get(requestUrl);
+        return result.data;
+    } catch (error) {
+        console.error('Error fetching video metadata:', error);
+        throw error;
+    }
 }
