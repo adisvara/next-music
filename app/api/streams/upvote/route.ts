@@ -32,6 +32,9 @@ export async function POST(req:NextRequest) {
                userId:user.id,
                streamId: data.streamId 
             }
+        });
+        return NextResponse.json({
+            message:"done"
         })
 
     } catch (error) {
